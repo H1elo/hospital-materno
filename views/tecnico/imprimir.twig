@@ -1,0 +1,130 @@
+{% extends 'layouts/public.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block title %}Reporte {{ registro.num_historia }} - {{ app_name }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-3xl px-6 py-10">
+    <div class="mb-6 flex items-center justify-between no-print">
+        <a href="{{ url('/tecnico/registros') }}" class="btn btn-ghost btn-sm">
+            {{ ui.icon('arrow-left', 'w-4 h-4') }}
+            Volver
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" data-print>
+            {{ ui.icon('printer', 'w-4 h-4') }}
+            Imprimir reporte
+        </button>
+    </div>
+
+    <article class="card overflow-hidden">
+        {# Membrete #}
+        <header class="flex items-center justify-between gap-4 border-b border-border-soft/40 p-8">
+            <div class="flex items-center gap-3">
+                <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft">
+                    {{ ui.icon('heart', 'w-6 h-6 text-primary fill-primary') }}
+                </span>
+                <div>
+                    <h1 class="font-serif text-2xl leading-tight">{{ app_name }}</h1>
+                    <p class="text-xs font-semibold text-foreground/55">Departamento de Registros Medicos</p>
+                </div>
+            </div>
+            <div class="text-right text-xs text-foreground/55">
+                <p class="font-bold text-foreground/70">Reporte de consulta</p>
+                <p>{{ registro.fecha_consulta|fecha('d/m/Y H:i') }}</p>
+                <p>Expediente {{ registro.num_historia }}</p>
+            </div>
+        </header>
+
+        <div class="space-y-6 p-8">
+            {# Identificacion #}
+            <section>
+                <h2 class="mb-3 border-b border-border-soft/40 pb-2 font-serif text-lg">Identificacion del paciente</h2>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+                    {% for item in [
+                        { label: 'Nombre', value: registro.nombres ~ ' ' ~ registro.apellidos },
+                        { label: 'Cedula', value: registro.nacionalidad ~ '-' ~ registro.cedula },
+                        { label: 'Edad', value: registro.edad ~ ' anios' },
+                        { label: 'Fecha de nacimiento', value: registro.fecha_nacimiento|fecha },
+                        { label: 'Telefono', value: registro.telefono },
+                        { label: 'Estado civil', value: registro.estado_civil },
+                        { label: 'Ocupacion', value: registro.ocupacion },
+                        { label: 'Direccion', value: registro.direccion }
+                    ] %}
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-foreground/40">{{ item.label }}</p>
+                            <p class="font-semibold">{{ item.value ?: '-' }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {# Consulta #}
+            <section>
+                <h2 class="mb-3 border-b border-border-soft/40 pb-2 font-serif text-lg">Datos de la consulta</h2>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-foreground/40">Especialidad</p>
+                        <p class="font-semibold">{{ registro.nombre_especialidad }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-foreground/40">Medico tratante</p>
+                        <p class="font-semibold">{{ registro.medico_nombres }} {{ registro.medico_apellidos }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-foreground/40">Tipo de consulta</p>
+                        <p class="font-semibold">{{ registro.tipo_consulta }}</p>
+                    </div>
+                </div>
+            </section>
+
+            {# Cuerpo #}
+            <section class="space-y-4">
+                {% for bloque in [
+                    { label: 'Motivo de consulta', value: registro.motivo_consulta },
+                    { label: 'Enfermedad actual', value: registro.enfermedad_actual },
+                    { label: 'Examen fisico y signos vitales', value: registro.examen_fisico },
+                    { label: 'Diagnostico', value: registro.diagnostico },
+                    { label: 'Tratamiento y plan', value: registro.tratamiento_plan },
+                    { label: 'Notas de evolucion', value: registro.notas_evolucion }
+                ] %}
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-foreground/45">{{ bloque.label }}</p>
+                        <p class="mt-1 border-l-2 border-primary-soft pl-3 text-sm leading-relaxed">{{ bloque.value ?: 'No registrado' }}</p>
+                    </div>
+                {% endfor %}
+            </section>
+
+            {# Adjuntos #}
+            {% if adjuntos is not empty %}
+                <section>
+                    <h2 class="mb-3 border-b border-border-soft/40 pb-2 font-serif text-lg">Adjuntos</h2>
+                    <ul class="space-y-1 text-sm">
+                        {% for adjunto in adjuntos %}
+                            <li class="flex justify-between gap-4">
+                                <span class="font-semibold">{{ adjunto.nombre_archivo }}</span>
+                                <span class="text-foreground/50">{{ adjunto.descripcion }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+
+            {# Firma #}
+            <section class="mt-16 grid grid-cols-2 gap-12 pt-8">
+                <div class="border-t border-foreground/30 pt-2 text-center text-xs">
+                    <p class="font-bold">{{ registro.medico_nombres }} {{ registro.medico_apellidos }}</p>
+                    <p class="text-foreground/55">{{ registro.num_colegiatura }}</p>
+                </div>
+                <div class="border-t border-foreground/30 pt-2 text-center text-xs">
+                    <p class="font-bold">Registros Medicos</p>
+                    <p class="text-foreground/55">Sello y firma</p>
+                </div>
+            </section>
+        </div>
+    </article>
+
+    <p class="mt-4 text-center text-xs text-foreground/40 no-print">
+        Generado el {{ "now"|date("d/m/Y H:i") }}
+    </p>
+</div>
+{% endblock %}

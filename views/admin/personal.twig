@@ -1,0 +1,233 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Gestion de Personal{% endblock %}
+{% block page_subtitle %}Altas, roles y estado de los usuarios del sistema{% endblock %}
+
+{% block page_actions %}
+    <button type="button" class="btn btn-primary btn-sm" data-modal-open="modal-empleado">
+        {{ ui.icon('user-plus', 'w-4 h-4') }}
+        Nuevo empleado
+    </button>
+{% endblock %}
+
+{% block content %}
+{% set role_badges = {
+    'Medico': 'badge-pink',
+    'Tecnico de Registro': 'badge-blue',
+    'Administrador': 'badge-lavanda',
+    'Paciente': 'badge-mint'
+} %}
+
+{# -------------------------------- Metricas ------------------------------- #}
+<div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% for card in [
+        { label: 'Medicos activos', value: metrics.medicos, icon: 'stethoscope', tone: 'pink' },
+        { label: 'Tecnicos activos', value: metrics.tecnicos, icon: 'users', tone: 'blue' },
+        { label: 'Especialidades', value: metrics.especialidades, icon: 'activity', tone: 'mint' },
+        { label: 'Total en sistema', value: metrics.total, icon: 'trending-up', tone: 'lavanda' }
+    ] %}
+        {% set tones = {
+            pink: 'bg-primary-soft text-primary',
+            blue: 'bg-secondary-soft text-secondary-deep',
+            mint: 'bg-accent-soft text-accent-deep',
+            lavanda: 'bg-lavanda-soft text-lavanda-dark'
+        } %}
+        <div class="card-soft flex items-center gap-4">
+            <span class="flex h-12 w-12 items-center justify-center rounded-2xl {{ tones[card.tone] }}">
+                {{ ui.icon(card.icon, 'w-5 h-5') }}
+            </span>
+            <div>
+                <p class="font-serif text-3xl leading-none">{{ card.value ?? 0 }}</p>
+                <p class="mt-1 text-xs font-bold uppercase tracking-wider text-foreground/45">{{ card.label }}</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{# -------------------------------- Filtros -------------------------------- #}
+<div class="mb-6 flex flex-wrap gap-2">
+    {% for opcion in [
+        { id: 'todos', label: 'Todos' },
+        { id: 'Medico', label: 'Medicos' },
+        { id: 'Tecnico de Registro', label: 'Tecnicos' },
+        { id: 'Administrador', label: 'Administradores' },
+        { id: 'Paciente', label: 'Pacientes' }
+    ] %}
+        <a href="{{ url('/admin?rol=' ~ opcion.id|url_encode) }}"
+           class="btn btn-sm {{ filtro_rol == opcion.id ? 'btn-lavanda' : 'btn-ghost' }}">
+            {{ opcion.label }}
+        </a>
+    {% endfor %}
+</div>
+
+{# --------------------------------- Tabla --------------------------------- #}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <th>Cedula / Correo</th>
+                <th>Rol</th>
+                <th>Especialidad</th>
+                <th>Estado</th>
+                <th class="text-right">Accion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for empleado in empleados %}
+                <tr>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <span class="avatar">{{ (empleado.nombres ~ ' ' ~ empleado.apellidos)|iniciales }}</span>
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold">
+                                    {{ (empleado.nombres ~ ' ' ~ empleado.apellidos)|trim ?: 'Usuario ' ~ empleado.cedula }}
+                                </p>
+                                <p class="truncate text-xs text-foreground/50">Desde {{ empleado.creado_en|fecha }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <p class="font-semibold text-foreground/70">{{ empleado.nacionalidad }}-{{ empleado.cedula }}</p>
+                        <p class="truncate text-xs text-foreground/50">{{ empleado.correo ?: '-' }}</p>
+                    </td>
+                    <td>
+                        <span class="badge {{ role_badges[empleado.nombre_rol] ?? 'badge-neutral' }}">{{ empleado.nombre_rol }}</span>
+                    </td>
+                    <td class="text-foreground/70">{{ empleado.nombre_especialidad ?: '-' }}</td>
+                    <td>
+                        <span class="badge {{ empleado.estado == 'Activo' ? 'badge-mint' : 'badge-danger' }}">{{ empleado.estado }}</span>
+                    </td>
+                    <td class="text-right">
+                        {% if empleado.id_usuario != auth().id_usuario %}
+                            <form method="post" action="{{ url('/admin/personal/' ~ empleado.id_usuario ~ '/estado') }}"
+                                  data-confirm="Cambiar el estado de este usuario?">
+                                {{ csrf_field()|raw }}
+                                <button type="submit" class="btn btn-ghost btn-sm">
+                                    {{ ui.icon(empleado.estado == 'Activo' ? 'x' : 'check', 'w-4 h-4') }}
+                                    {{ empleado.estado == 'Activo' ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="text-xs text-foreground/40">Tu usuario</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" class="py-10 text-center text-sm text-foreground/50">No hay usuarios con ese rol.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ------------------------------ Modal alta ------------------------------- #}
+<div id="modal-empleado" class="fixed inset-0 z-50 hidden" data-modal>
+    <div class="absolute inset-0 bg-foreground/40 backdrop-blur-sm" data-modal-close></div>
+    <div class="relative mx-auto mt-10 max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-3xl bg-white p-8 shadow-2xl">
+        <div class="mb-6 flex items-start justify-between">
+            <div>
+                <h2 class="font-serif text-2xl">Nuevo empleado</h2>
+                <p class="text-sm text-foreground/55">Se generara una clave temporal al guardar.</p>
+            </div>
+            <button type="button" class="rounded-full p-2 text-foreground/50 hover:bg-muted" data-modal-close>
+                {{ ui.icon('x', 'w-5 h-5') }}
+            </button>
+        </div>
+
+        <form method="post" action="{{ url('/admin/personal') }}" class="space-y-4" id="form-empleado">
+            {{ csrf_field()|raw }}
+
+            <div>
+                <label class="label">Rol</label>
+                <div class="grid gap-2 sm:grid-cols-3">
+                    {% for rol in roles %}
+                        {% if rol.nombre_rol != 'Paciente' %}
+                            <label class="flex cursor-pointer items-center gap-2 rounded-2xl border border-border-soft/50 px-4 py-3 text-sm font-semibold transition hover:border-lavanda has-[:checked]:border-lavanda has-[:checked]:bg-lavanda-soft">
+                                <input type="radio" name="rol" value="{{ rol.nombre_rol }}" class="accent-[#9B78D0]"
+                                       {{ loop.first ? 'checked' : '' }}>
+                                {{ rol.nombre_rol }}
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="e-cedula" class="label">Cedula</label>
+                    <input id="e-cedula" name="cedula" type="text" class="input" placeholder="Ej. 12345678" required>
+                    {% if error('cedula') %}<p class="field-error">{{ error('cedula') }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="e-correo" class="label">Correo</label>
+                    <input id="e-correo" name="correo" type="email" class="input" placeholder="usuario@hospital.gob" required>
+                    {% if error('correo') %}<p class="field-error">{{ error('correo') }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="e-nombres" class="label">Nombres</label>
+                    <input id="e-nombres" name="nombres" type="text" class="input" required>
+                </div>
+                <div>
+                    <label for="e-apellidos" class="label">Apellidos</label>
+                    <input id="e-apellidos" name="apellidos" type="text" class="input" required>
+                </div>
+                <div>
+                    <label for="e-telefono" class="label">Telefono</label>
+                    <input id="e-telefono" name="telefono" type="text" class="input">
+                </div>
+                <div data-medico-only>
+                    <label for="e-especialidad" class="label">Especialidad (medicos)</label>
+                    <select id="e-especialidad" name="id_especialidad" class="select">
+                        {% for especialidad in especialidades %}
+                            <option value="{{ especialidad.id_especialidad }}">{{ especialidad.nombre_especialidad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div data-medico-only>
+                    <label for="e-colegiatura" class="label">N° Colegiatura (MPPS)</label>
+                    <input id="e-colegiatura" name="num_colegiatura" type="text" class="input" placeholder="MPPS-00000">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" class="btn btn-lavanda">
+                    {{ ui.icon('user-plus', 'w-4 h-4') }}
+                    Registrar empleado
+                </button>
+                <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var form = document.getElementById('form-empleado');
+        if (!form) return;
+
+        function syncMedicoFields() {
+            var selected = form.querySelector('input[name="rol"]:checked');
+            var isMedico = selected && selected.value === 'Medico';
+
+            form.querySelectorAll('[data-medico-only]').forEach(function (block) {
+                block.style.display = isMedico ? '' : 'none';
+            });
+        }
+
+        form.querySelectorAll('input[name="rol"]').forEach(function (radio) {
+            radio.addEventListener('change', syncMedicoFields);
+        });
+
+        syncMedicoFields();
+
+        {% if error('cedula') or error('correo') %}
+            document.getElementById('modal-empleado')?.classList.remove('hidden');
+        {% endif %}
+    })();
+</script>
+{% endblock %}

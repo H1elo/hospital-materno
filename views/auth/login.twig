@@ -1,0 +1,252 @@
+{% extends 'layouts/public.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block title %}Acceso al Portal - {{ app_name }}{% endblock %}
+
+{% set initial_tab = (errors.nombres is defined or errors.apellidos is defined or errors.correo is defined or errors.password is defined) ? 'register' : 'login' %}
+
+{% block body %}
+<div class="relative flex min-h-screen flex-col"
+     style="background: linear-gradient(145deg, #FFF0F5 0%, #FFF8FB 45%, #EBF5FC 100%);">
+    <div class="pointer-events-none fixed left-0 top-0 h-80 w-80 rounded-full bg-[#FFD6E5] opacity-30 blur-3xl"></div>
+    <div class="pointer-events-none fixed bottom-0 right-0 h-96 w-96 rounded-full bg-[#C5E8F8] opacity-30 blur-3xl"></div>
+
+    {# -------------------------------- Header -------------------------------- #}
+    <header class="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+        <a href="{{ url('/') }}" class="group flex items-center gap-2 text-sm font-semibold text-foreground/60 transition-colors hover:text-primary">
+            {{ ui.icon('arrow-left', 'w-4 h-4 transition-transform group-hover:-translate-x-0.5') }}
+            Volver al inicio
+        </a>
+        <a href="{{ url('/') }}" class="flex items-center gap-2.5">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft shadow-sm">
+                {{ ui.icon('heart', 'w-[15px] h-[15px] text-primary fill-primary') }}
+            </span>
+            <span class="font-serif text-lg font-bold tracking-tight">
+                Hospital Materno <span class="text-primary">Rosa</span>
+            </span>
+        </a>
+        <div class="w-28"></div>
+    </header>
+
+    {# --------------------------------- Main --------------------------------- #}
+    <main class="relative z-10 flex flex-1 items-center justify-center px-6 py-10">
+        <div class="w-full max-w-md">
+            <div class="overflow-hidden rounded-[2rem] border border-primary-soft/40 bg-white shadow-xl">
+
+                {# Tabs #}
+                <div class="flex border-b border-[#F5EEF4]">
+                    <button type="button" data-tab-button="login"
+                            class="flex flex-1 items-center justify-center gap-2 border-b-2 py-4 text-sm font-bold transition-all duration-200">
+                        {{ ui.icon('log-in', 'w-[15px] h-[15px]') }}
+                        Iniciar sesion
+                    </button>
+                    <button type="button" data-tab-button="register"
+                            class="flex flex-1 items-center justify-center gap-2 border-b-2 py-4 text-sm font-bold transition-all duration-200">
+                        {{ ui.icon('user-plus', 'w-[15px] h-[15px]') }}
+                        Crear cuenta
+                    </button>
+                </div>
+
+                {# Encabezado de la tarjeta #}
+                <div class="px-8 pb-6 pt-7" style="background: linear-gradient(135deg, #FFE8EF 0%, #EBF5FC 100%);">
+                    <div class="flex items-center gap-4">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+                            {{ ui.icon('shield', 'w-6 h-6 text-primary', 'data-tab-icon-login') }}
+                        </span>
+                        <div>
+                            <h1 class="font-serif text-2xl leading-tight text-foreground" data-tab-title>
+                                Acceso al Portal
+                            </h1>
+                            <p class="mt-0.5 text-sm font-semibold text-foreground/55" data-tab-subtitle>
+                                Ingresa con tu cedula y clave
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Alertas #}
+                {% if errors is not empty %}
+                    <div class="px-8 pt-5">
+                        <div class="alert alert-error">
+                            {{ ui.icon('alert', 'w-[17px] h-[17px] shrink-0') }}
+                            <p class="flex-1">{{ errors|first }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# ---------------------------- Form login ---------------------------- #}
+                <form action="{{ url('/login') }}" method="post" class="space-y-5 px-8 py-6" data-tab-panel="login">
+                    {{ csrf_field()|raw }}
+
+                    <div>
+                        <label for="cedula" class="label">Numero de Cedula</label>
+                        <div class="relative">
+                            {{ ui.icon('credit-card', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary') }}
+                            <input id="cedula" name="cedula" type="text" inputmode="numeric" placeholder="Ej. 001-1234567-8"
+                                   value="{{ old('cedula') }}" class="input input-icon {{ error('cedula') ? 'border-danger' : '' }}" required>
+                        </div>
+                        {% if error('cedula') %}<p class="field-error">{{ error('cedula') }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label for="clave" class="label">Clave de Acceso</label>
+                        <div class="relative">
+                            {{ ui.icon('lock', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary') }}
+                            <input id="clave" name="clave" type="password" placeholder="••••••••"
+                                   class="input input-icon pr-12 {{ error('clave') ? 'border-danger' : '' }}" required>
+                            <button type="button" data-toggle-password="clave"
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/35 transition-colors hover:text-secondary">
+                                <span data-eye>{{ ui.icon('eye', 'w-[17px] h-[17px]') }}</span>
+                                <span data-eye-off class="hidden">{{ ui.icon('eye-off', 'w-[17px] h-[17px]') }}</span>
+                            </button>
+                        </div>
+                        {% if error('clave') %}<p class="field-error">{{ error('clave') }}</p>{% endif %}
+                    </div>
+
+                    <div class="-mt-2 flex justify-end">
+                        <a href="#" class="text-xs font-bold text-secondary transition-colors hover:text-secondary-dark">
+                            Olvidaste tu clave?
+                        </a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block py-4 text-base">
+                        Ingresar al portal
+                    </button>
+
+                    <p class="pb-2 text-center text-sm text-foreground/45">
+                        No tienes cuenta?
+                        <button type="button" data-tab-button="register" class="font-bold text-primary transition-colors hover:text-primary-dark">
+                            Crear una aqui
+                        </button>
+                    </p>
+                </form>
+
+                {# --------------------------- Form registro -------------------------- #}
+                <form action="{{ url('/register') }}" method="post" class="space-y-4 px-8 py-6" data-tab-panel="register">
+                    {{ csrf_field()|raw }}
+
+                    <div>
+                        <label for="r-cedula" class="label">Numero de Cedula</label>
+                        <div class="relative">
+                            {{ ui.icon('credit-card', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary') }}
+                            <input id="r-cedula" name="cedula" type="text" inputmode="numeric" placeholder="Ej. 001-1234567-8"
+                                   value="{{ old('cedula') }}" class="input input-icon {{ error('cedula') ? 'border-danger' : '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="r-nombres" class="label">Nombres</label>
+                            <div class="relative">
+                                {{ ui.icon('user', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-lavanda') }}
+                                <input id="r-nombres" name="nombres" type="text" placeholder="Maria Elena"
+                                       value="{{ old('nombres') }}" class="input input-icon {{ error('nombres') ? 'border-danger' : '' }}" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="r-apellidos" class="label">Apellidos</label>
+                            <div class="relative">
+                                {{ ui.icon('user', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-lavanda') }}
+                                <input id="r-apellidos" name="apellidos" type="text" placeholder="Perez Garcia"
+                                       value="{{ old('apellidos') }}" class="input input-icon {{ error('apellidos') ? 'border-danger' : '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="r-correo" class="label">Correo Electronico</label>
+                        <div class="relative">
+                            {{ ui.icon('mail', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-accent-dark') }}
+                            <input id="r-correo" name="correo" type="email" placeholder="ejemplo@correo.com"
+                                   value="{{ old('correo') }}" class="input input-icon {{ error('correo') ? 'border-danger' : '' }}" required>
+                        </div>
+                        {% if error('correo') %}<p class="field-error">{{ error('correo') }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label for="r-password" class="label">Contrasena</label>
+                        <div class="relative">
+                            {{ ui.icon('lock', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary') }}
+                            <input id="r-password" name="password" type="password" placeholder="Minimo 6 caracteres"
+                                   class="input input-icon pr-12 {{ error('password') ? 'border-danger' : '' }}" required>
+                            <button type="button" data-toggle-password="r-password"
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/35 transition-colors hover:text-secondary">
+                                <span data-eye>{{ ui.icon('eye', 'w-[17px] h-[17px]') }}</span>
+                                <span data-eye-off class="hidden">{{ ui.icon('eye-off', 'w-[17px] h-[17px]') }}</span>
+                            </button>
+                        </div>
+                        {% if error('password') %}<p class="field-error">{{ error('password') }}</p>{% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary btn-block mt-2 py-4 text-base">
+                        {{ ui.icon('user-plus', 'w-[17px] h-[17px]') }}
+                        Crear mi cuenta
+                    </button>
+
+                    <p class="pb-2 text-center text-sm text-foreground/45">
+                        Ya tienes cuenta?
+                        <button type="button" data-tab-button="login" class="font-bold text-primary transition-colors hover:text-primary-dark">
+                            Iniciar sesion
+                        </button>
+                    </p>
+                </form>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-foreground/35">
+                {{ ui.icon('shield', 'w-[13px] h-[13px] text-accent') }}
+                Conexion segura SSL - Tus datos estan protegidos
+            </div>
+
+            <div class="mt-4 rounded-2xl border border-primary-soft/50 bg-white/70 p-4 text-center text-xs text-foreground/50">
+                <p class="font-bold text-foreground/60">Cuentas de demostracion (clave: 123456)</p>
+                <p class="mt-1">Paciente V-40000005 &middot; Medico V-20000002 &middot; Tecnico V-30000004 &middot; Admin V-10000001</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="relative z-10 py-5 text-center text-xs font-semibold text-foreground/30">
+        &copy; {{ "now"|date("Y") }} {{ app_name }} &middot; Todos los derechos reservados
+    </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var initial = '{{ initial_tab }}';
+
+        var titles = {
+            login: { title: 'Acceso al Portal', subtitle: 'Ingresa con tu cedula y clave' },
+            register: { title: 'Nueva Cuenta', subtitle: 'Completa tus datos para registrarte' }
+        };
+
+        function setTab(tab) {
+            document.querySelectorAll('[data-tab-panel]').forEach(function (panel) {
+                panel.classList.toggle('hidden', panel.getAttribute('data-tab-panel') !== tab);
+            });
+
+            document.querySelectorAll('[data-tab-button]').forEach(function (button) {
+                var isActive = button.getAttribute('data-tab-button') === tab;
+                button.classList.toggle('text-primary', isActive);
+                button.classList.toggle('border-primary', isActive);
+                button.classList.toggle('bg-background', isActive);
+                button.classList.toggle('text-foreground/40', !isActive);
+                button.classList.toggle('border-transparent', !isActive);
+            });
+
+            var title = document.querySelector('[data-tab-title]');
+            var subtitle = document.querySelector('[data-tab-subtitle]');
+            if (title) title.textContent = titles[tab].title;
+            if (subtitle) subtitle.textContent = titles[tab].subtitle;
+        }
+
+        document.querySelectorAll('[data-tab-button]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                setTab(button.getAttribute('data-tab-button'));
+            });
+        });
+
+        setTab(initial);
+    })();
+</script>
+{% endblock %}

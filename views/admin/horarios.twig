@@ -1,0 +1,219 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Horarios y Disponibilidad{% endblock %}
+{% block page_subtitle %}Turnos, cupos y consultorios por especialista{% endblock %}
+
+{% block page_actions %}
+    <button type="button" class="btn btn-lavanda btn-sm" data-modal-open="modal-horario">
+        {{ ui.icon('plus', 'w-4 h-4') }}
+        Nuevo horario
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Medico</th>
+                <th>Dia</th>
+                <th>Turno</th>
+                <th>Cupos</th>
+                <th>Consultorio</th>
+                <th>Ocupacion 7 dias</th>
+                <th>Estado</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for horario in horarios %}
+                {% set reservadas = ocupacion[horario.id_horario] ?? 0 %}
+                {% set pct = horario.cupos_max > 0 ? ((reservadas / horario.cupos_max) * 100)|round : 0 %}
+                <tr>
+                    <td>
+                        <p class="font-semibold">{{ horario.nombres }} {{ horario.apellidos }}</p>
+                    </td>
+                    <td>
+                        <span class="badge badge-pink">{{ horario.dia_semana }}</span>
+                    </td>
+                    <td class="whitespace-nowrap font-semibold text-foreground/70">
+                        {{ horario.hora_inicio|slice(0, 5) }} - {{ horario.hora_fin|slice(0, 5) }}
+                    </td>
+                    <td class="font-bold">{{ horario.cupos_max }}</td>
+                    <td class="text-foreground/70">{{ horario.consultorio ?: '-' }}</td>
+                    <td class="min-w-[140px]">
+                        <div class="flex items-center gap-2">
+                            <div class="h-2 w-24 overflow-hidden rounded-full bg-muted">
+                                <div class="h-full rounded-full {{ pct >= 90 ? 'bg-danger' : (pct >= 60 ? 'bg-lavanda' : 'bg-accent-dark') }}"
+                                     style="width: {{ pct > 100 ? 100 : pct }}%"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-foreground/55">{{ reservadas }}/{{ horario.cupos_max }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {{ horario.activo ? 'badge-mint' : 'badge-neutral' }}">
+                            {{ horario.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" class="btn btn-ghost btn-sm"
+                                    data-modal-open="modal-editar-{{ horario.id_horario }}">
+                                {{ ui.icon('edit', 'w-4 h-4') }}
+                            </button>
+                            <form method="post" action="{{ url('/admin/horarios/' ~ horario.id_horario ~ '/eliminar') }}"
+                                  data-confirm="Eliminar este horario?">
+                                {{ csrf_field()|raw }}
+                                <button type="submit" class="btn btn-ghost btn-sm !text-danger">
+                                    {{ ui.icon('trash', 'w-4 h-4') }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="8" class="py-10 text-center text-sm text-foreground/50">
+                        No hay horarios configurados.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# --------------------------- Modales de edicion -------------------------- #}
+{% for horario in horarios %}
+    <div id="modal-editar-{{ horario.id_horario }}" class="fixed inset-0 z-50 hidden" data-modal>
+        <div class="absolute inset-0 bg-foreground/40 backdrop-blur-sm" data-modal-close></div>
+        <div class="relative mx-auto mt-16 w-[calc(100%-2rem)] max-w-lg rounded-3xl bg-white p-8 shadow-2xl">
+            <div class="mb-6 flex items-start justify-between">
+                <div>
+                    <h2 class="font-serif text-xl">Editar horario</h2>
+                    <p class="text-sm text-foreground/55">{{ horario.nombres }} {{ horario.apellidos }}</p>
+                </div>
+                <button type="button" class="rounded-full p-2 text-foreground/50 hover:bg-muted" data-modal-close>
+                    {{ ui.icon('x', 'w-5 h-5') }}
+                </button>
+            </div>
+
+            <form method="post" action="{{ url('/admin/horarios/' ~ horario.id_horario) }}" class="space-y-4">
+                {{ csrf_field()|raw }}
+
+                <div>
+                    <label class="label">Dia</label>
+                    <select name="dia_semana" class="select">
+                        {% for dia in dias %}
+                            <option value="{{ dia }}" {{ horario.dia_semana == dia ? 'selected' : '' }}>{{ dia }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="label">Hora inicio</label>
+                        <input type="time" name="hora_inicio" class="input" value="{{ horario.hora_inicio|slice(0, 5) }}">
+                    </div>
+                    <div>
+                        <label class="label">Hora fin</label>
+                        <input type="time" name="hora_fin" class="input" value="{{ horario.hora_fin|slice(0, 5) }}">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="label">Cupos maximos</label>
+                        <input type="number" name="cupos_max" min="1" class="input" value="{{ horario.cupos_max }}">
+                    </div>
+                    <div>
+                        <label class="label">Consultorio</label>
+                        <input type="text" name="consultorio" class="input" value="{{ horario.consultorio }}">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label">Estado</label>
+                    <select name="activo" class="select">
+                        <option value="1" {{ horario.activo ? 'selected' : '' }}>Activo</option>
+                        <option value="0" {{ not horario.activo ? 'selected' : '' }}>Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <button type="submit" class="btn btn-lavanda">
+                        {{ ui.icon('check', 'w-4 h-4') }}
+                        Guardar cambios
+                    </button>
+                    <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endfor %}
+
+{# ------------------------------ Modal nuevo ------------------------------ #}
+<div id="modal-horario" class="fixed inset-0 z-50 hidden" data-modal>
+    <div class="absolute inset-0 bg-foreground/40 backdrop-blur-sm" data-modal-close></div>
+    <div class="relative mx-auto mt-16 w-[calc(100%-2rem)] max-w-lg rounded-3xl bg-white p-8 shadow-2xl">
+        <div class="mb-6 flex items-start justify-between">
+            <h2 class="font-serif text-xl">Nuevo horario</h2>
+            <button type="button" class="rounded-full p-2 text-foreground/50 hover:bg-muted" data-modal-close>
+                {{ ui.icon('x', 'w-5 h-5') }}
+            </button>
+        </div>
+
+        <form method="post" action="{{ url('/admin/horarios') }}" class="space-y-4">
+            {{ csrf_field()|raw }}
+
+            <div>
+                <label for="h-medico" class="label">Medico</label>
+                <select id="h-medico" name="id_medico" class="select" required>
+                    {% for medico in medicos %}
+                        <option value="{{ medico.id_medico }}">{{ medico.apellidos }}, {{ medico.nombres }} - {{ medico.nombre_especialidad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="h-dia" class="label">Dia</label>
+                <select id="h-dia" name="dia_semana" class="select">
+                    {% for dia in dias %}
+                        <option value="{{ dia }}">{{ dia }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="h-inicio" class="label">Hora inicio</label>
+                    <input id="h-inicio" type="time" name="hora_inicio" class="input" value="07:00" required>
+                </div>
+                <div>
+                    <label for="h-fin" class="label">Hora fin</label>
+                    <input id="h-fin" type="time" name="hora_fin" class="input" value="12:00" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="h-cupos" class="label">Cupos maximos</label>
+                    <input id="h-cupos" type="number" name="cupos_max" min="1" value="10" class="input" required>
+                </div>
+                <div>
+                    <label for="h-consultorio" class="label">Consultorio</label>
+                    <input id="h-consultorio" type="text" name="consultorio" class="input" placeholder="Consultorio 1">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" class="btn btn-lavanda">
+                    {{ ui.icon('plus', 'w-4 h-4') }}
+                    Agregar horario
+                </button>
+                <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

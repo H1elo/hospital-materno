@@ -1,0 +1,216 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Agendar Cita{% endblock %}
+{% block page_subtitle %}Selecciona especialista, fecha y hora para tu consulta{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url('/paciente/citas') }}" class="btn btn-outline btn-sm">
+        {{ ui.icon('clipboard', 'w-4 h-4') }}
+        Mis citas
+    </a>
+{% endblock %}
+
+{% block content %}
+{% set estados = {
+    'Disponible':  'badge-mint',
+    'Pocos cupos': 'badge-lavanda',
+    'Lleno':       'badge-danger',
+    'Cerrado':     'badge-neutral'
+} %}
+
+<div class="grid gap-6 lg:grid-cols-[2fr_1fr]">
+    <div class="space-y-6">
+        {# ------------------------- Seleccion de medico ------------------------- #}
+        <form method="get" action="{{ url('/paciente') }}" class="card-soft">
+            <div class="flex flex-wrap items-end gap-4">
+                <div class="min-w-[220px] flex-1">
+                    <label for="medico" class="label">Especialista</label>
+                    <select id="medico" name="medico" class="select" data-auto-submit>
+                        {% for medico in medicos %}
+                            <option value="{{ medico.id_medico }}" {{ medico.id_medico == medico_seleccionado ? 'selected' : '' }}>
+                                {{ medico.apellidos }}, {{ medico.nombres }} - {{ medico.nombre_especialidad }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="label">Mes</label>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url('/paciente?medico=' ~ medico_seleccionado ~ '&anio=' ~ (mes == 1 ? anio - 1 : anio) ~ '&mes=' ~ (mes == 1 ? 12 : mes - 1)) }}"
+                           class="btn btn-ghost btn-sm">{{ ui.icon('chevron-right', 'w-4 h-4 rotate-180') }}</a>
+                        <span class="min-w-[130px] text-center font-serif text-lg">{{ mes_nombre }} {{ anio }}</span>
+                        <a href="{{ url('/paciente?medico=' ~ medico_seleccionado ~ '&anio=' ~ (mes == 12 ? anio + 1 : anio) ~ '&mes=' ~ (mes == 12 ? 1 : mes + 1)) }}"
+                           class="btn btn-ghost btn-sm">{{ ui.icon('chevron-right', 'w-4 h-4') }}</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        {# ----------------------------- Calendario ------------------------------ #}
+        <div class="card-soft">
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <h2 class="font-serif text-xl">Disponibilidad</h2>
+                <div class="flex flex-wrap gap-2 text-[11px]">
+                    <span class="badge badge-mint">Disponible</span>
+                    <span class="badge badge-lavanda">Pocos cupos</span>
+                    <span class="badge badge-danger">Lleno</span>
+                    <span class="badge badge-neutral">Cerrado</span>
+                </div>
+            </div>
+
+            {% if dias is empty %}
+                <p class="rounded-2xl bg-muted p-4 text-sm text-foreground/60">
+                    No hay especialistas registrados. Contacta al administrador.
+                </p>
+            {% else %}
+                <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold uppercase tracking-wider text-foreground/40">
+                    {% for dia in ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'] %}
+                        <span class="py-2">{{ dia }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-1 grid grid-cols-7 gap-2" id="calendar">
+                    {# celdas vacias hasta el primer dia del mes #}
+                    {% for blank in range(1, offset) %}
+                        <span></span>
+                    {% endfor %}
+
+                    {% for dia in dias %}
+                        {% set clickable = not dia.pasado and dia.estado in ['Disponible', 'Pocos cupos'] %}
+                        <button type="button"
+                                class="flex flex-col items-center gap-1 rounded-2xl border p-2 transition-all
+                                       {{ dia.es_hoy ? 'border-primary ring-2 ring-primary/30' : 'border-border-soft/40' }}
+                                       {{ clickable ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md' : 'cursor-not-allowed opacity-60' }}"
+                                data-day
+                                data-fecha="{{ dia.fecha }}"
+                                data-disponible="{{ clickable ? '1' : '0' }}"
+                                {{ clickable ? '' : 'disabled' }}>
+                            <span class="text-sm font-bold {{ dia.es_hoy ? 'text-primary' : 'text-foreground' }}">{{ dia.dia }}</span>
+                            <span class="badge {{ estados[dia.estado] ?? 'badge-neutral' }} !px-2 !py-0.5 !text-[10px]">
+                                {{ dia.disponibles }} cupos
+                            </span>
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ------------------------------ Confirmacion ------------------------------ #}
+    <div class="space-y-6">
+        <form method="post" action="{{ url('/paciente/citas') }}" class="card-soft" id="appointment-form">
+            {{ csrf_field()|raw }}
+            <h2 class="mb-4 font-serif text-xl">Confirmar cita</h2>
+
+            <input type="hidden" name="id_medico" value="{{ medico_seleccionado }}">
+            <input type="hidden" name="fecha_cita" id="fecha-input" value="">
+            <input type="hidden" name="hora_cita" id="hora-input" value="">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="label">Especialista</label>
+                    {% set seleccionado = medicos|filter(m => m.id_medico == medico_seleccionado)|first %}
+                    <p class="rounded-2xl bg-background px-4 py-3 text-sm font-semibold">
+                        {{ seleccionado ? seleccionado.nombres ~ ' ' ~ seleccionado.apellidos ~ ' - ' ~ seleccionado.nombre_especialidad : 'Sin seleccionar' }}
+                    </p>
+                </div>
+
+                <div>
+                    <label class="label">Fecha seleccionada</label>
+                    <p class="rounded-2xl bg-background px-4 py-3 text-sm font-semibold" id="fecha-texto">Selecciona un dia del calendario</p>
+                </div>
+
+                <div>
+                    <label class="label">Horario disponible</label>
+                    <div class="grid grid-cols-3 gap-2" id="slots">
+                        {% for slot in slots %}
+                            <button type="button" class="rounded-xl border border-border-soft/50 py-2 text-xs font-bold text-foreground/70 transition hover:border-primary hover:text-primary" data-slot="{{ slot }}">
+                                {{ slot }}
+                            </button>
+                        {% else %}
+                            <p class="col-span-3 text-xs text-foreground/50">Sin horarios configurados.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="motivo_consulta" class="label">Motivo de consulta</label>
+                    <textarea id="motivo_consulta" name="motivo_consulta" rows="3" class="textarea"
+                              placeholder="Describe brevemente el motivo de tu consulta">{{ old('motivo_consulta') }}</textarea>
+                    {% if error('motivo_consulta') %}<p class="field-error">{{ error('motivo_consulta') }}</p>{% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block py-3.5" id="submit-button" disabled>
+                    {{ ui.icon('calendar', 'w-4 h-4') }}
+                    Confirmar cita
+                </button>
+            </div>
+        </form>
+
+        {# --------------------------- Citas proximas ---------------------------- #}
+        <div class="card-soft">
+            <h2 class="mb-4 font-serif text-xl">Proximas citas</h2>
+            <div class="space-y-3">
+                {% for cita in citas_proximas %}
+                    <div class="rounded-2xl border border-primary-soft/50 bg-background p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-bold">{{ cita.fecha_cita|fecha }}</span>
+                            <span class="badge badge-pink">{{ cita.hora_cita|slice(0, 5) }}</span>
+                        </div>
+                        <p class="mt-1 text-xs font-semibold text-foreground/60">
+                            {{ cita.medico_nombres }} {{ cita.medico_apellidos }} - {{ cita.nombre_especialidad }}
+                        </p>
+                        <p class="mt-1 text-xs text-foreground/50">{{ cita.motivo_consulta }}</p>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-foreground/50">No tienes citas pendientes.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var fechaInput = document.getElementById('fecha-input');
+        var horaInput = document.getElementById('hora-input');
+        var fechaTexto = document.getElementById('fecha-texto');
+        var submit = document.getElementById('submit-button');
+
+        document.querySelectorAll('[data-day]').forEach(function (day) {
+            day.addEventListener('click', function () {
+                if (day.getAttribute('data-disponible') !== '1') return;
+
+                document.querySelectorAll('[data-day]').forEach(function (other) {
+                    other.classList.remove('border-primary', 'bg-primary-soft');
+                });
+                day.classList.add('border-primary', 'bg-primary-soft');
+
+                fechaInput.value = day.getAttribute('data-fecha');
+                var parts = day.getAttribute('data-fecha').split('-');
+                fechaTexto.textContent = parts[2] + '/' + parts[1] + '/' + parts[0];
+
+                horaInput.value = '';
+                document.querySelectorAll('[data-slot]').forEach(function (slot) {
+                    slot.classList.remove('border-primary', 'bg-primary', 'text-white');
+                });
+                submit.disabled = true;
+            });
+        });
+
+        document.querySelectorAll('[data-slot]').forEach(function (slot) {
+            slot.addEventListener('click', function () {
+                document.querySelectorAll('[data-slot]').forEach(function (other) {
+                    other.classList.remove('border-primary', 'bg-primary', 'text-white');
+                });
+                slot.classList.add('border-primary', 'bg-primary', 'text-white');
+                horaInput.value = slot.getAttribute('data-slot') + ':00';
+                submit.disabled = fechaInput.value === '';
+            });
+        });
+    })();
+</script>
+{% endblock %}

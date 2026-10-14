@@ -1,0 +1,13 @@
+{% if flashes is not empty %}
+    <div class="fixed right-4 top-4 z-[100] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-3 no-print" id="flash-stack">
+        {% for flash in flashes %}
+            {% set tone = flash.type == 'success' ? 'alert-success' : (flash.type == 'error' ? 'alert-error' : 'alert-info') %}
+            <div class="alert {{ tone }} shadow-soft" data-flash>
+                <span class="flex-1">{{ flash.message }}</span>
+                <button type="button" class="shrink-0 opacity-60 transition hover:opacity-100" data-flash-close aria-label="Cerrar">
+                    &times;
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

@@ -1,0 +1,61 @@
+{% extends 'layouts/public.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block title %}Comprobante de cita - {{ app_name }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-2xl px-6 py-10">
+    <div class="mb-6 flex items-center justify-between no-print">
+        <a href="{{ url('/paciente/citas') }}" class="btn btn-ghost btn-sm">
+            {{ ui.icon('arrow-left', 'w-4 h-4') }}
+            Volver
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" data-print>
+            {{ ui.icon('printer', 'w-4 h-4') }}
+            Imprimir
+        </button>
+    </div>
+
+    <div class="card overflow-hidden">
+        <div class="flex items-center gap-4 border-b border-border-soft/40 p-8" style="background: linear-gradient(135deg, #FFE8EF 0%, #EBF5FC 100%);">
+            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+                {{ ui.icon('heart', 'w-6 h-6 text-primary fill-primary') }}
+            </span>
+            <div>
+                <h1 class="font-serif text-2xl">{{ app_name }}</h1>
+                <p class="text-sm font-semibold text-foreground/55">Comprobante de cita medica</p>
+            </div>
+        </div>
+
+        <div class="grid gap-5 p-8 sm:grid-cols-2">
+            {% for item in [
+                { label: 'Paciente', value: paciente.nombres ~ ' ' ~ paciente.apellidos },
+                { label: 'Numero de historia', value: paciente.num_historia },
+                { label: 'Cedula', value: auth().cedula },
+                { label: 'Telefono', value: paciente.telefono },
+                { label: 'Especialidad', value: cita.nombre_especialidad },
+                { label: 'Especialista', value: cita.medico_nombres ~ ' ' ~ cita.medico_apellidos },
+                { label: 'Fecha de la cita', value: cita.fecha_cita|fecha },
+                { label: 'Hora', value: cita.hora_cita|slice(0, 5) },
+                { label: 'Estado', value: cita.estado },
+                { label: 'Codigo de cita', value: 'CITA-' ~ cita.id_cita|format('%04d') }
+            ] %}
+                <div class="rounded-2xl bg-background px-4 py-3">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-foreground/40">{{ item.label }}</p>
+                    <p class="text-sm font-semibold">{{ item.value ?: '-' }}</p>
+                </div>
+            {% endfor %}
+
+            <div class="rounded-2xl bg-background px-4 py-3 sm:col-span-2">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-foreground/40">Motivo de consulta</p>
+                <p class="text-sm font-semibold">{{ cita.motivo_consulta ?: '-' }}</p>
+            </div>
+        </div>
+
+        <div class="border-t border-border-soft/40 px-8 py-5 text-xs text-foreground/50">
+            <p>Presenta este comprobante el dia de tu cita. Llega 15 minutos antes de la hora indicada.</p>
+            <p class="mt-1">Generado el {{ "now"|date("d/m/Y H:i") }}.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

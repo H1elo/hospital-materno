@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-background font-sans text-foreground">
+    {% include 'partials/flash.twig' %}
+
+    {% block body %}{% endblock %}
+
+    <script src="{{ asset('js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

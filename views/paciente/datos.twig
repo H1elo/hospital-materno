@@ -1,0 +1,164 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Mis Datos{% endblock %}
+{% block page_subtitle %}Informacion personal y antecedentes clinicos{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[1fr_2fr]">
+    {# ---------------------------- Ficha resumen ---------------------------- #}
+    <div class="space-y-6">
+        <div class="card-soft text-center">
+            <span class="avatar mx-auto !h-20 !w-20 !text-2xl">{{ (paciente.nombres ~ ' ' ~ paciente.apellidos)|iniciales }}</span>
+            <h2 class="mt-4 font-serif text-2xl">{{ paciente.nombres }} {{ paciente.apellidos }}</h2>
+            <p class="text-sm text-foreground/55">{{ paciente.num_historia ?? 'Sin numero de historia' }}</p>
+            <span class="badge badge-pink mt-3">{{ paciente.fecha_nacimiento|edad }} anios</span>
+
+            <div class="mt-6 space-y-3 text-left">
+                {% for item in [
+                    { label: 'Cedula', value: auth().cedula, icon: 'credit-card' },
+                    { label: 'Telefono', value: paciente.telefono, icon: 'phone' },
+                    { label: 'Ocupacion', value: paciente.ocupacion, icon: 'user' },
+                    { label: 'Estado civil', value: paciente.estado_civil, icon: 'heart' },
+                    { label: 'Direccion', value: paciente.direccion, icon: 'map-pin' }
+                ] %}
+                    <div class="flex items-start gap-3 rounded-2xl bg-background px-4 py-3">
+                        {{ ui.icon(item.icon, 'w-4 h-4 mt-0.5 text-primary shrink-0') }}
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-foreground/40">{{ item.label }}</p>
+                            <p class="truncate text-sm font-semibold">{{ item.value ?: '-' }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ------------------------- Contacto emergencia ------------------------- #}
+        <div class="card-soft">
+            <div class="mb-4 flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-soft">
+                    {{ ui.icon('shield', 'w-5 h-5 text-accent-dark') }}
+                </span>
+                <h2 class="font-serif text-lg">Contacto de emergencia</h2>
+            </div>
+
+            <form method="post" action="{{ url('/paciente/datos/contacto') }}" class="space-y-4">
+                {{ csrf_field()|raw }}
+                <div>
+                    <label for="contacto_nombre" class="label">Nombre completo</label>
+                    <input id="contacto_nombre" name="contacto_nombre" type="text" class="input"
+                           value="{{ paciente.contacto_emergencia_nombre }}" placeholder="Ej. Carmen Garcia">
+                </div>
+                <div>
+                    <label for="contacto_telefono" class="label">Telefono</label>
+                    <input id="contacto_telefono" name="contacto_telefono" type="text" class="input"
+                           value="{{ paciente.contacto_emergencia_telefono }}" placeholder="Ej. 0414-0000000">
+                </div>
+                <button type="submit" class="btn btn-accent btn-block">
+                    {{ ui.icon('check', 'w-4 h-4') }}
+                    Guardar contacto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {# ------------------------------- Formulario ----------------------------- #}
+    <div class="space-y-6">
+        <form method="post" action="{{ url('/paciente/datos') }}" class="card-soft">
+            {{ csrf_field()|raw }}
+            <div class="mb-5 flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-soft">
+                    {{ ui.icon('user', 'w-5 h-5 text-primary') }}
+                </span>
+                <h2 class="font-serif text-xl">Datos personales</h2>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="nombres" class="label">Nombres</label>
+                    <input id="nombres" name="nombres" type="text" class="input" value="{{ paciente.nombres }}" required>
+                    {% if error('nombres') %}<p class="field-error">{{ error('nombres') }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="apellidos" class="label">Apellidos</label>
+                    <input id="apellidos" name="apellidos" type="text" class="input" value="{{ paciente.apellidos }}" required>
+                    {% if error('apellidos') %}<p class="field-error">{{ error('apellidos') }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="fecha_nacimiento" class="label">Fecha de nacimiento</label>
+                    <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" class="input"
+                           value="{{ paciente.fecha_nacimiento }}" required>
+                </div>
+                <div>
+                    <label for="telefono" class="label">Telefono</label>
+                    <input id="telefono" name="telefono" type="text" class="input" value="{{ paciente.telefono }}">
+                </div>
+                <div>
+                    <label for="estado_civil" class="label">Estado civil</label>
+                    <select id="estado_civil" name="estado_civil" class="select">
+                        {% for opcion in ['', 'Soltera', 'Soltero', 'Casada', 'Casado', 'Divorciada', 'Divorciado', 'Viuda', 'Viudo', 'Concubinato'] %}
+                            <option value="{{ opcion }}" {{ paciente.estado_civil == opcion ? 'selected' : '' }}>{{ opcion ?: 'Seleccione...' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="ocupacion" class="label">Ocupacion</label>
+                    <input id="ocupacion" name="ocupacion" type="text" class="input" value="{{ paciente.ocupacion }}">
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="direccion" class="label">Direccion</label>
+                    <textarea id="direccion" name="direccion" rows="2" class="textarea">{{ paciente.direccion }}</textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-5">
+                {{ ui.icon('check', 'w-4 h-4') }}
+                Guardar cambios
+            </button>
+        </form>
+
+        {# ---------------------------- Antecedentes ---------------------------- #}
+        <div class="card-soft">
+            <div class="mb-5 flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary-soft">
+                    {{ ui.icon('droplets', 'w-5 h-5 text-secondary') }}
+                </span>
+                <h2 class="font-serif text-xl">Antecedentes gineco-obstetricos</h2>
+            </div>
+
+            {% if antecedentes %}
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {% for item in [
+                        { label: 'Menarquia', value: antecedentes.menarquia ? antecedentes.menarquia ~ ' anios' : null },
+                        { label: 'Sexarquia', value: antecedentes.sexarquia ? antecedentes.sexarquia ~ ' anios' : null },
+                        { label: 'Ciclos menstruales', value: antecedentes.ciclos_menstruales },
+                        { label: 'Gestas', value: antecedentes.gestas },
+                        { label: 'Partos', value: antecedentes.partos },
+                        { label: 'Abortos', value: antecedentes.abortos },
+                        { label: 'Cesareas', value: antecedentes.cesareas },
+                        { label: 'Ultima regla', value: antecedentes.fecha_ultima_regla|fecha },
+                        { label: 'Ultima citologia', value: antecedentes.fecha_ultima_citologia|fecha },
+                        { label: 'Metodo anticonceptivo', value: antecedentes.metodo_anticonceptivo }
+                    ] %}
+                        <div class="rounded-2xl bg-background px-4 py-3">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-foreground/40">{{ item.label }}</p>
+                            <p class="text-sm font-semibold">{{ item.value is not null and item.value != '' ? item.value : '-' }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if antecedentes.observaciones %}
+                    <div class="mt-4 rounded-2xl border border-secondary-soft bg-secondary-soft/40 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-secondary-deep">Observaciones</p>
+                        <p class="mt-1 text-sm">{{ antecedentes.observaciones }}</p>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="rounded-2xl bg-muted p-4 text-sm text-foreground/60">
+                    Aun no hay antecedentes registrados. Se completaran en tu primera consulta.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

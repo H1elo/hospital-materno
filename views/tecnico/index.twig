@@ -1,0 +1,145 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Panel de Estadisticas{% endblock %}
+{% block page_subtitle %}Resumen de atenciones registradas &middot; {{ filtro.label }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url('/tecnico/exportar?periodo=' ~ filtro.id ~ '&desde=' ~ filtro.desde ~ '&hasta=' ~ filtro.hasta) }}" class="btn btn-outline btn-sm">
+        {{ ui.icon('download', 'w-4 h-4') }}
+        Exportar CSV
+    </a>
+{% endblock %}
+
+{% block content %}
+{# -------------------------------- Filtros ------------------------------- #}
+<form method="get" action="{{ url('/tecnico') }}" class="card-soft mb-6">
+    <div class="flex flex-wrap items-end gap-4">
+        <div>
+            <label for="periodo" class="label">Periodo</label>
+            <select id="periodo" name="periodo" class="select" data-auto-submit>
+                {% for opcion in [
+                    { id: 'hoy', label: 'Hoy' },
+                    { id: 'semana', label: 'Esta semana' },
+                    { id: 'mes', label: 'Este mes' },
+                    { id: 'personalizado', label: 'Personalizado' }
+                ] %}
+                    <option value="{{ opcion.id }}" {{ filtro.id == opcion.id ? 'selected' : '' }}>{{ opcion.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if filtro.id == 'personalizado' %}
+            <div>
+                <label for="desde" class="label">Desde</label>
+                <input id="desde" name="desde" type="date" class="input" value="{{ filtro.desde }}">
+            </div>
+            <div>
+                <label for="hasta" class="label">Hasta</label>
+                <input id="hasta" name="hasta" type="date" class="input" value="{{ filtro.hasta }}">
+            </div>
+        {% endif %}
+
+        <input type="hidden" name="periodo" value="{{ filtro.id }}">
+        <button type="submit" class="btn btn-primary">
+            {{ ui.icon('filter', 'w-4 h-4') }}
+            Aplicar
+        </button>
+    </div>
+</form>
+
+{# --------------------------------- Stats -------------------------------- #}
+<div class="mb-6 grid gap-4 sm:grid-cols-3">
+    {% for card in [
+        { label: 'Total atendidas', value: stats.total, icon: 'users', tone: 'lavanda' },
+        { label: 'Primera vez', value: stats.primera_vez, icon: 'user-plus', tone: 'pink' },
+        { label: 'Control', value: stats.control, icon: 'book-open', tone: 'blue' }
+    ] %}
+        {% set tones = {
+            lavanda: 'bg-lavanda-soft text-lavanda-dark',
+            pink: 'bg-primary-soft text-primary',
+            blue: 'bg-secondary-soft text-secondary-deep'
+        } %}
+        <div class="card-soft">
+            <div class="flex items-center gap-4">
+                <span class="flex h-12 w-12 items-center justify-center rounded-2xl {{ tones[card.tone] }}">
+                    {{ ui.icon(card.icon, 'w-5 h-5') }}
+                </span>
+                <div>
+                    <p class="font-serif text-3xl leading-none">{{ card.value ?? 0 }}</p>
+                    <p class="mt-1 text-xs font-bold uppercase tracking-wider text-foreground/45">{{ card.label }}</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="grid gap-6 xl:grid-cols-[1fr_2fr]">
+    {# --------------------------- Por especialidad -------------------------- #}
+    <div class="card-soft">
+        <h2 class="mb-5 font-serif text-xl">Atenciones por especialidad</h2>
+
+        {% set totalGlobal = stats.total > 0 ? stats.total : 1 %}
+        <div class="space-y-4">
+            {% for fila in por_especialidad %}
+                {% set pct = (fila.total / totalGlobal * 100)|round %}
+                <div>
+                    <div class="mb-1.5 flex items-center justify-between text-sm">
+                        <span class="font-semibold">{{ fila.nombre_especialidad }}</span>
+                        <span class="font-bold text-foreground/60">{{ fila.total }}</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-muted">
+                        <div class="h-full rounded-full bg-lavanda" style="width: {{ pct }}%"></div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-sm text-foreground/50">Sin atenciones en el periodo seleccionado.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ---------------------------- Ultimos registros ------------------------ #}
+    <div class="card-soft">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="font-serif text-xl">Ultimos registros</h2>
+            <a href="{{ url('/tecnico/registros') }}" class="btn btn-ghost btn-sm">
+                Ver todos
+                {{ ui.icon('chevron-right', 'w-4 h-4') }}
+            </a>
+        </div>
+
+        <div class="table-wrap !rounded-2xl !shadow-none">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Expediente</th>
+                        <th>Paciente</th>
+                        <th>Especialidad</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in ultimos %}
+                        <tr>
+                            <td class="font-semibold text-foreground/70">{{ registro.num_historia }}</td>
+                            <td>{{ registro.nombres }} {{ registro.apellidos }}</td>
+                            <td class="text-foreground/70">{{ registro.nombre_especialidad }}</td>
+                            <td>
+                                <span class="badge {{ registro.tipo_consulta starts with 'Primera' ? 'badge-pink' : 'badge-lavanda' }}">
+                                    {{ registro.tipo_consulta starts with 'Primera' ? 'Primera vez' : 'Control' }}
+                                </span>
+                            </td>
+                            <td class="whitespace-nowrap text-foreground/60">{{ registro.fecha_consulta|fecha }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-sm text-foreground/50">Sin registros.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

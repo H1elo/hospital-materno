@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Servidor PHP (localhost:8000)",
+            "type": "shell",
+            "command": "php -S localhost:8000 -t public public/router.php",
+            "isBackground": true,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Tailwind: compilar",
+            "type": "shell",
+            "command": "npm run build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Tailwind: observar cambios",
+            "type": "shell",
+            "command": "npm run dev",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Base de datos: crear y cargar datos",
+            "type": "shell",
+            "command": "php database/setup.php",
+            "problemMatcher": []
+        }
+    ]
+}

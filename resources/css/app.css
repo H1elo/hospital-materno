@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+@source "../../views/**/*.twig";
+@source "../../src/**/*.php";
+@source "../../public/**/*.php";
+
+/* ---------------------------------------------------------------------------
+   Design tokens - extraidos de Figma (src/styles/theme.css + fonts.css)
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "DM Serif Display", ui-serif, Georgia, serif;
+
+  --color-background: #fff8fb;
+  --color-foreground: #2c2438;
+  --color-card: #ffffff;
+
+  --color-muted: #f9eef3;
+  --color-muted-foreground: #8a7590;
+  --color-border-soft: #f5bdd0;
+
+  --color-primary: #e8819e;
+  --color-primary-dark: #d96b8a;
+  --color-primary-deep: #c05a78;
+  --color-primary-soft: #ffe8ef;
+
+  --color-secondary: #8ec9e8;
+  --color-secondary-dark: #6fbde2;
+  --color-secondary-deep: #1f6a9a;
+  --color-secondary-soft: #e2f3fb;
+
+  --color-accent: #a8d9c2;
+  --color-accent-dark: #5cc49a;
+  --color-accent-deep: #2d7a5a;
+  --color-accent-soft: #e4f7ef;
+
+  --color-lavanda: #9b78d0;
+  --color-lavanda-dark: #7b5bb8;
+  --color-lavanda-soft: #ede7f8;
+
+  --color-danger: #d4183d;
+  --color-danger-soft: #fee2e2;
+
+  --radius-soft: 1rem;
+
+  --shadow-soft: 0 10px 30px -12px rgba(44, 36, 56, 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif font-normal;
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* ------------------------------- Botones ------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold
+           transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+           disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white shadow-sm hover:bg-primary-dark hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white shadow-sm hover:bg-secondary-dark hover:shadow-md;
+  }
+
+  .btn-accent {
+    @apply bg-accent-dark text-white shadow-sm hover:brightness-95 hover:shadow-md;
+  }
+
+  .btn-lavanda {
+    @apply bg-lavanda text-white shadow-sm hover:bg-lavanda-dark hover:shadow-md;
+  }
+
+  .btn-outline {
+    @apply border border-primary bg-white text-primary hover:bg-primary-soft;
+  }
+
+  .btn-ghost {
+    @apply text-foreground/60 hover:bg-muted hover:text-primary;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:brightness-95;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-xs;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  /* ------------------------------ Formularios ---------------------------- */
+  .label {
+    @apply mb-1.5 block pl-1 text-sm font-bold text-foreground/70;
+  }
+
+  .input {
+    @apply w-full rounded-2xl border border-border-soft bg-background px-4 py-3 text-sm font-semibold
+           text-foreground placeholder:font-normal placeholder:text-foreground/30
+           focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25;
+  }
+
+  .input-icon {
+    @apply pl-11;
+  }
+
+  .textarea {
+    @apply w-full rounded-2xl border border-border-soft bg-background px-4 py-3 text-sm text-foreground
+           placeholder:text-foreground/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25;
+  }
+
+  .select {
+    @apply w-full rounded-2xl border border-border-soft bg-background px-4 py-3 text-sm font-semibold
+           text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25;
+  }
+
+  .field-error {
+    @apply mt-1 pl-1 text-xs font-semibold text-danger;
+  }
+
+  /* -------------------------------- Tarjetas ----------------------------- */
+  .card {
+    @apply rounded-3xl border border-border-soft/40 bg-card shadow-sm;
+  }
+
+  .card-soft {
+    @apply rounded-3xl border border-border-soft/30 bg-card p-7 shadow-sm;
+  }
+
+  .card-pink {
+    @apply rounded-3xl border border-primary-soft bg-primary-soft;
+  }
+
+  .card-blue {
+    @apply rounded-3xl border border-secondary-soft bg-secondary-soft;
+  }
+
+  .card-mint {
+    @apply rounded-3xl border border-accent-soft bg-accent-soft;
+  }
+
+  .card-lavanda {
+    @apply rounded-3xl border border-lavanda-soft bg-lavanda-soft;
+  }
+
+  /* -------------------------------- Badges ------------------------------- */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold;
+  }
+
+  .badge-pink {
+    @apply bg-primary-soft text-primary-deep;
+  }
+
+  .badge-blue {
+    @apply bg-secondary-soft text-secondary-deep;
+  }
+
+  .badge-mint {
+    @apply bg-accent-soft text-accent-deep;
+  }
+
+  .badge-lavanda {
+    @apply bg-lavanda-soft text-lavanda-dark;
+  }
+
+  .badge-danger {
+    @apply bg-danger-soft text-danger;
+  }
+
+  .badge-neutral {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* -------------------------------- Tablas ------------------------------- */
+  .table-wrap {
+    @apply overflow-x-auto rounded-3xl border border-border-soft/40 bg-card shadow-sm;
+  }
+
+  .table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .table thead th {
+    @apply bg-muted/60 px-5 py-4 text-xs font-bold uppercase tracking-wider text-foreground/50;
+  }
+
+  .table tbody td {
+    @apply border-t border-border-soft/25 px-5 py-4 align-middle;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-primary-soft/25;
+  }
+
+  /* ------------------------------- Sidebar ------------------------------- */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-foreground/60
+           transition-all duration-200 hover:bg-primary-soft hover:text-primary;
+  }
+
+  .nav-link-active {
+    @apply bg-primary text-white shadow-sm hover:bg-primary hover:text-white;
+  }
+
+  /* -------------------------------- Varios ------------------------------- */
+  .section-eyebrow {
+    @apply text-xs font-bold uppercase tracking-widest;
+  }
+
+  .divider {
+    @apply border-t border-border-soft/40;
+  }
+
+  .avatar {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft
+           text-sm font-bold text-primary;
+  }
+
+  .alert {
+    @apply flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold;
+  }
+
+  .alert-success {
+    @apply border-accent/40 bg-accent-soft text-accent-deep;
+  }
+
+  .alert-error {
+    @apply border-danger/30 bg-danger-soft text-danger;
+  }
+
+  .alert-info {
+    @apply border-secondary/40 bg-secondary-soft text-secondary-deep;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+}

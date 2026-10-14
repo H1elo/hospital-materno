@@ -1,0 +1,124 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Inicio{% endblock %}
+{% block page_subtitle %}{{ medico.nombre_especialidad }} &middot; {{ medico.nombres }} {{ medico.apellidos }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url('/medico/historias') }}" class="btn btn-primary btn-sm">
+        {{ ui.icon('clipboard', 'w-4 h-4') }}
+        Ver historias
+    </a>
+{% endblock %}
+
+{% block content %}
+{# --------------------------------- Stats -------------------------------- #}
+<div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% for card in [
+        { label: 'Total agendadas', value: stats.total, icon: 'calendar', tone: 'pink' },
+        { label: 'En espera hoy', value: stats.pendientes, icon: 'users', tone: 'blue' },
+        { label: 'Completadas', value: stats.atendidas, icon: 'check-circle', tone: 'mint' },
+        { label: 'Canceladas', value: stats.canceladas, icon: 'x', tone: 'lavanda' }
+    ] %}
+        {% set tones = {
+            pink:    'bg-primary-soft text-primary',
+            blue:    'bg-secondary-soft text-secondary-deep',
+            mint:    'bg-accent-soft text-accent-deep',
+            lavanda: 'bg-lavanda-soft text-lavanda-dark'
+        } %}
+        <div class="card-soft flex items-center gap-4">
+            <span class="flex h-12 w-12 items-center justify-center rounded-2xl {{ tones[card.tone] }}">
+                {{ ui.icon(card.icon, 'w-5 h-5') }}
+            </span>
+            <div>
+                <p class="font-serif text-3xl leading-none">{{ card.value ?? 0 }}</p>
+                <p class="mt-1 text-xs font-bold uppercase tracking-wider text-foreground/45">{{ card.label }}</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+    {# -------------------------- Pacientes en espera ------------------------- #}
+    <div class="card-soft">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="font-serif text-xl">Pacientes en espera (hoy)</h2>
+            <span class="badge badge-pink">{{ en_espera|length }}</span>
+        </div>
+
+        <div class="table-wrap !rounded-2xl !shadow-none">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Paciente</th>
+                        <th>Historia</th>
+                        <th>Motivo</th>
+                        <th class="text-right">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cita in en_espera %}
+                        <tr>
+                            <td class="font-bold text-primary">{{ cita.hora_cita|slice(0, 5) }}</td>
+                            <td>
+                                <p class="font-semibold">{{ cita.nombres }} {{ cita.apellidos }}</p>
+                                <p class="text-xs text-foreground/50">{{ cita.edad }} anios</p>
+                            </td>
+                            <td class="text-foreground/60">{{ cita.num_historia }}</td>
+                            <td class="text-foreground/70">{{ cita.motivo_consulta }}</td>
+                            <td class="text-right">
+                                <a href="{{ url('/medico/historias/' ~ cita.id_cita) }}" class="btn btn-primary btn-sm">
+                                    {{ ui.icon('stethoscope', 'w-4 h-4') }}
+                                    Atender
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-sm text-foreground/50">
+                                No hay pacientes en espera por ahora.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ------------------------------ Proximas ------------------------------- #}
+    <div class="space-y-6">
+        <div class="card-soft">
+            <h2 class="mb-4 font-serif text-xl">Proximas citas</h2>
+            <div class="space-y-3">
+                {% for cita in proximas %}
+                    <div class="rounded-2xl border border-primary-soft/50 bg-background p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-bold">{{ cita.fecha_cita|fecha }}</span>
+                            <span class="badge badge-blue">{{ cita.hora_cita|slice(0, 5) }}</span>
+                        </div>
+                        <p class="mt-1 text-sm font-semibold">{{ cita.nombres }} {{ cita.apellidos }}</p>
+                        <p class="text-xs text-foreground/50">{{ cita.motivo_consulta }}</p>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-foreground/50">Sin citas programadas.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-soft">
+            <h2 class="mb-4 font-serif text-xl">Accesos rapidos</h2>
+            <div class="space-y-2">
+                <a href="{{ url('/medico/historias') }}" class="nav-link">
+                    {{ ui.icon('clipboard', 'w-[18px] h-[18px]') }}
+                    Historias clinicas
+                </a>
+                <a href="{{ url('/medico/horario') }}" class="nav-link">
+                    {{ ui.icon('calendar', 'w-[18px] h-[18px]') }}
+                    Mi horario
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

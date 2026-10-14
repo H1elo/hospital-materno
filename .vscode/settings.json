@@ -1,0 +1,28 @@
+{
+    "php.validate.executablePath": "C:\\Users\\Leopa\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PHP.PHP.8.5_Microsoft.Winget.Source_8wekyb3d8bbwe\\php.exe",
+    "php.validate.enable": true,
+    "php.suggest.basic": false,
+    "intelephense.environment.phpVersion": "8.1.0",
+    "files.associations": {
+        "*.twig": "twig"
+    },
+    "emmet.includeLanguages": {
+        "twig": "html"
+    },
+    "tailwindCSS.includeLanguages": {
+        "twig": "html"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "class=\"([^\"]*)\""
+        ]
+    ],
+    "editor.formatOnSave": false,
+    "files.exclude": {
+        "**/vendor": true,
+        "**/node_modules": true
+    },
+    "[twig]": {
+        "editor.tabSize": 4
+    }
+}

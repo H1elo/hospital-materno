@@ -1,0 +1,25 @@
+{
+  "name": "hospital/materno-rosa",
+  "description": "Sistema de control de citas e historias medicas - Hospital Materno Rosa",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*",
+    "slim/slim": "^4.14",
+    "slim/psr7": "^1.7",
+    "slim/twig-view": "^3.4",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    },
+    "files": [
+      "src/Support/helpers.php"
+    ]
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

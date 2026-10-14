@@ -1,0 +1,96 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Registros Medicos{% endblock %}
+{% block page_subtitle %}{{ registros|length }} expedientes &middot; {{ filtro.label }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url('/tecnico/exportar?periodo=' ~ filtro.id ~ '&desde=' ~ filtro.desde ~ '&hasta=' ~ filtro.hasta) }}" class="btn btn-outline btn-sm">
+        {{ ui.icon('download', 'w-4 h-4') }}
+        Exportar CSV
+    </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" action="{{ url('/tecnico/registros') }}" class="card-soft mb-6">
+    <div class="flex flex-wrap items-end gap-4">
+        <div class="min-w-[220px] flex-1">
+            <label for="buscar" class="label">Buscar</label>
+            <div class="relative">
+                {{ ui.icon('search', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-foreground/40') }}
+                <input id="buscar" name="buscar" type="text" class="input input-icon" value="{{ buscar }}"
+                       placeholder="Expediente, nombre o apellido">
+            </div>
+        </div>
+        <div>
+            <label for="periodo" class="label">Periodo</label>
+            <select id="periodo" name="periodo" class="select">
+                {% for opcion in [
+                    { id: 'hoy', label: 'Hoy' },
+                    { id: 'semana', label: 'Esta semana' },
+                    { id: 'mes', label: 'Este mes' },
+                    { id: 'personalizado', label: 'Personalizado' }
+                ] %}
+                    <option value="{{ opcion.id }}" {{ filtro.id == opcion.id ? 'selected' : '' }}>{{ opcion.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            {{ ui.icon('filter', 'w-4 h-4') }}
+            Filtrar
+        </button>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#Expediente</th>
+                <th>Paciente</th>
+                <th>Especialidad</th>
+                <th>Medico tratante</th>
+                <th>Tipo</th>
+                <th>Fecha</th>
+                <th class="text-right">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in registros %}
+                <tr>
+                    <td class="font-semibold text-foreground/70">{{ registro.num_historia }}</td>
+                    <td>
+                        <p class="font-semibold">{{ registro.nombres }} {{ registro.apellidos }}</p>
+                        <p class="text-xs text-foreground/50">{{ registro.fecha_nacimiento|edad }} anios</p>
+                    </td>
+                    <td class="text-foreground/70">{{ registro.nombre_especialidad }}</td>
+                    <td class="text-foreground/70">{{ registro.medico_nombres }} {{ registro.medico_apellidos }}</td>
+                    <td>
+                        <span class="badge {{ registro.tipo_consulta starts with 'Primera' ? 'badge-pink' : 'badge-lavanda' }}">
+                            {{ registro.tipo_consulta starts with 'Primera' ? 'Primera vez' : 'Control' }}
+                        </span>
+                    </td>
+                    <td class="whitespace-nowrap text-foreground/60">{{ registro.fecha_consulta|fecha }}</td>
+                    <td>
+                        <div class="flex justify-end gap-2">
+                            <a href="{{ url('/tecnico/registros/' ~ registro.id_consulta) }}" class="btn btn-ghost btn-sm">
+                                {{ ui.icon('eye', 'w-4 h-4') }}
+                                Ver
+                            </a>
+                            <a href="{{ url('/tecnico/registros/' ~ registro.id_consulta ~ '/imprimir') }}" class="btn btn-ghost btn-sm">
+                                {{ ui.icon('printer', 'w-4 h-4') }}
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="py-10 text-center text-sm text-foreground/50">
+                        No se encontraron registros con los filtros aplicados.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

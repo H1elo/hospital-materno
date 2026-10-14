@@ -1,0 +1,72 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Mi Horario{% endblock %}
+{% block page_subtitle %}Turnos de consulta asignados y agenda de la semana{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+    <div class="card-soft">
+        <div class="mb-5 flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-soft">
+                {{ ui.icon('calendar', 'w-5 h-5 text-primary') }}
+            </span>
+            <h2 class="font-serif text-xl">Turnos asignados</h2>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            {% for horario in horarios %}
+                <div class="rounded-2xl border border-border-soft/40 bg-background p-4">
+                    <div class="flex items-center justify-between">
+                        <span class="badge badge-pink">{{ horario.dia_semana }}</span>
+                        <span class="badge {{ horario.activo ? 'badge-mint' : 'badge-neutral' }}">
+                            {{ horario.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                    </div>
+                    <p class="mt-3 font-serif text-lg">
+                        {{ horario.hora_inicio|slice(0, 5) }} - {{ horario.hora_fin|slice(0, 5) }}
+                    </p>
+                    <div class="mt-2 flex items-center gap-4 text-xs text-foreground/55">
+                        <span class="flex items-center gap-1.5">
+                            {{ ui.icon('users', 'w-3.5 h-3.5') }}
+                            {{ horario.cupos_max }} cupos
+                        </span>
+                        {% if horario.consultorio %}
+                            <span class="flex items-center gap-1.5">
+                                {{ ui.icon('map-pin', 'w-3.5 h-3.5') }}
+                                {{ horario.consultorio }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-sm text-foreground/50 sm:col-span-2">
+                    Aun no tienes turnos asignados. El administrador debe configurarlos.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card-soft">
+        <div class="mb-5 flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary-soft">
+                {{ ui.icon('activity', 'w-5 h-5 text-secondary') }}
+            </span>
+            <h2 class="font-serif text-xl">Carga proxima</h2>
+        </div>
+
+        <div class="space-y-3">
+            {% for dia in proximas %}
+                <div class="flex items-center justify-between rounded-2xl bg-background px-4 py-3">
+                    <span class="text-sm font-semibold">{{ dia.fecha_cita|fecha('d/m/Y') }}</span>
+                    <span class="badge {{ dia.total >= 8 ? 'badge-danger' : (dia.total >= 5 ? 'badge-lavanda' : 'badge-mint') }}">
+                        {{ dia.total }} citas
+                    </span>
+                </div>
+            {% else %}
+                <p class="text-sm text-foreground/50">No hay citas agendadas proximamente.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

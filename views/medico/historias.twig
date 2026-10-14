@@ -1,0 +1,110 @@
+{% extends 'layouts/dashboard.twig' %}
+{% import 'partials/icon.twig' as ui %}
+
+{% block page_title %}Historias Clinicas{% endblock %}
+{% block page_subtitle %}Consultas atendidas y pacientes por atender{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+    <div class="space-y-6">
+        {# -------------------------------- Filtros ------------------------------- #}
+        <form method="get" action="{{ url('/medico/historias') }}" class="card-soft">
+            <div class="flex flex-wrap items-end gap-4">
+                <div class="min-w-[200px] flex-1">
+                    <label for="buscar" class="label">Buscar paciente o diagnostico</label>
+                    <div class="relative">
+                        {{ ui.icon('search', 'w-[17px] h-[17px] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-foreground/40') }}
+                        <input id="buscar" name="buscar" type="text" class="input input-icon" value="{{ buscar }}" placeholder="Nombre, historia o diagnostico">
+                    </div>
+                </div>
+                <div class="min-w-[170px]">
+                    <label for="tipo" class="label">Tipo de consulta</label>
+                    <select id="tipo" name="tipo" class="select">
+                        <option value="todas" {{ tipo == 'todas' ? 'selected' : '' }}>Todas</option>
+                        <option value="primera" {{ tipo == 'primera' ? 'selected' : '' }}>Primera vez</option>
+                        <option value="control" {{ tipo == 'control' ? 'selected' : '' }}>Control / evolucion</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    {{ ui.icon('filter', 'w-4 h-4') }}
+                    Filtrar
+                </button>
+            </div>
+        </form>
+
+        {# ------------------------------ Resultados ----------------------------- #}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Paciente</th>
+                        <th>Historia</th>
+                        <th>Tipo</th>
+                        <th>Diagnostico</th>
+                        <th class="text-right">Ver</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                        <tr>
+                            <td class="whitespace-nowrap text-foreground/60">{{ registro.fecha_consulta|fecha }}</td>
+                            <td>
+                                <p class="font-semibold">{{ registro.nombres }} {{ registro.apellidos }}</p>
+                                <p class="text-xs text-foreground/50">{{ registro.fecha_nacimiento|edad }} anios</p>
+                            </td>
+                            <td class="text-foreground/60">{{ registro.num_historia }}</td>
+                            <td>
+                                <span class="badge {{ registro.tipo_consulta starts with 'Primera' ? 'badge-pink' : 'badge-lavanda' }}">
+                                    {{ registro.tipo_consulta starts with 'Primera' ? 'Primera vez' : 'Control' }}
+                                </span>
+                            </td>
+                            <td class="max-w-[260px] truncate text-foreground/70">{{ registro.diagnostico }}</td>
+                            <td class="text-right">
+                                <a href="{{ url('/medico/historias/' ~ registro.id_cita) }}" class="btn btn-ghost btn-sm">
+                                    {{ ui.icon('eye', 'w-4 h-4') }}
+                                    Abrir
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-sm text-foreground/50">
+                                No se encontraron historias con los filtros aplicados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# --------------------------- Pendientes de hoy -------------------------- #}
+    <div class="card-soft">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="font-serif text-xl">Por atender</h2>
+            <span class="badge badge-blue">{{ pendientes|length }}</span>
+        </div>
+
+        <div class="space-y-3">
+            {% for cita in pendientes %}
+                <div class="rounded-2xl border border-secondary-soft bg-secondary-soft/30 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-secondary-deep">{{ cita.fecha_cita|fecha }} &middot; {{ cita.hora_cita|slice(0, 5) }}</span>
+                        <span class="badge badge-neutral">{{ cita.consultas_previas }} previas</span>
+                    </div>
+                    <p class="mt-2 text-sm font-bold">{{ cita.nombres }} {{ cita.apellidos }}</p>
+                    <p class="text-xs text-foreground/50">{{ cita.num_historia }} &middot; {{ cita.fecha_nacimiento|edad }} anios</p>
+                    <p class="mt-1 text-xs text-foreground/60">{{ cita.motivo_consulta }}</p>
+                    <a href="{{ url('/medico/historias/' ~ cita.id_cita) }}" class="btn btn-primary btn-sm mt-3 w-full">
+                        {{ ui.icon('stethoscope', 'w-4 h-4') }}
+                        {{ cita.consultas_previas > 0 ? 'Registrar control' : 'Apertura de historia' }}
+                    </a>
+                </div>
+            {% else %}
+                <p class="text-sm text-foreground/50">No tienes citas pendientes.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "mblode.twig-language-2",
+        "bradlc.vscode-tailwindcss",
+        "mtxr.sqltools",
+        "esbenp.prettier-vscode"
+    ]
+}
